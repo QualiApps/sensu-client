@@ -1,0 +1,21 @@
+{
+  "client": {
+    "name": "localhost",
+    "address": "127.0.0.1",
+    "subscriptions": [
+        "cpu-metrics",
+        "memory-metrics",
+        "docker-cpu-metrics",
+        "docker-memory-metrics"
+     ]
+  },
+  "rabbitmq": {
+    "ssl": false,
+    "host": "localhost",
+    "port": 5672,
+    "vhost": "/",
+    "user": "rabbit",
+    "password": "rabbit"
+  }
+}
+
