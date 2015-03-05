@@ -15,6 +15,6 @@ Installation
 Running
 -----------------
 
-`docker run -d -P -v /sys/fs/cgroup:/home/cgroup --link rabbitmq:rabbitmq --name sensuClient qapss/sensu-client`
+`docker run -d -P -v /sys/fs/cgroup:/home/cgroup --link rabbitmq:rmq --name sensuClient qapss/sensu-client`
 
 `rabbitmq` - your rabbit container name
