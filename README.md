@@ -1,6 +1,7 @@
 Sensu Client
 ==============
 The Sensu client runs on all of your systems that you want to monitor.
+
 Depends on: RabbitMQ
 
 Installation
