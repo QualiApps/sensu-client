@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 
 if [ ! -f /etc/sensu/conf.d/config.json ]; then
-	ADDRESS=$(awk "/$HOSTNAME/ "'{ print $1 }' /etc/hosts)
+	#ADDRESS=$(awk "/$HOSTNAME/ "'{ print $1 }' /etc/hosts)
 
 # Sets client config                                                                                        
 cat > /etc/sensu/conf.d/config.json <<EOF                                                                  
 {                                                                                                             
   "client": {                                                                                                 
-    "name": "$HOSTNAME",                                                        
-    "address": "$ADDRESS",                                                                                   
+    "name": "$NODE_NAME",                                                        
+    "address": "$NODE_IP",                                                                                   
     "subscriptions": [                                                                                        
         "cpu-metrics",                                                                                        
         "memory-metrics",                                                                                     
@@ -18,7 +18,7 @@ cat > /etc/sensu/conf.d/config.json <<EOF
   },                                                                                                          
   "rabbitmq": {                                                                                               
     "ssl": false,
-    "host": "rMQ",
+    "host": "rmq",
     "port": $RMQ_PORT_5672_TCP_PORT,
     "vhost": "/",
     "user": "rabbit",

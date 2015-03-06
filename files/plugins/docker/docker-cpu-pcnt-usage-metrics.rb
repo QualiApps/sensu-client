@@ -22,7 +22,7 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
          description: 'docker host',
          short: '-H DOCKER_HOST',
          long: '--docker-host DOCKER_HOST',
-         default: 'tcp://127.0.0.1:2375'
+         default: "tcp://#{ENV['NODE_IP']}:2375"
 
   def get_cpuacct_stats 
      cpuacct_stat = []

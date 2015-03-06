@@ -16,13 +16,13 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
     :description => "path to cgroup mountpoint",
     :short => "-c PATH",
     :long => "--cgroup PATH",
-    :default => "/sys/fs/cgroup/memory/system.slice/"
+    :default => "/sys/fs/cgroup"
 
   option :docker_host,
          description: 'docker host',
          short: '-H DOCKER_HOST',
          long: '--docker-host DOCKER_HOST',
-         default: 'tcp://127.0.0.1:2375'
+         default: "tcp://#{ENV['NODE_IP']}:2375"
 
   def get_mem_stats
      mem_stat = []
@@ -34,7 +34,7 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
       prefix = "#{container}"
 
       ['memory.stat'].each do |stat|
-        f = [config[:cgroup_path], "docker-"+container+".scope", stat].join('/')
+        f = [config[:cgroup_path], "memory/system.slice/docker-"+container+".scope", stat].join('/')
         File.open(f, "r").each_line do |l|
           k, v = l.chomp.split /\s+/
           if (v != nil) then
@@ -61,7 +61,7 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
       prefix = "#{container}"
 
       ['memory.usage_in_bytes'].each do |stat|
-        f = [config[:cgroup_path], "docker-"+container+".scope", stat].join('/')
+        f = [config[:cgroup_path], "memory/system.slice/docker-"+container+".scope", stat].join('/')
         File.open(f, "r").each_line do |value|
           key = [prefix, stat, "usage"].join('.')
           info.push(value)
