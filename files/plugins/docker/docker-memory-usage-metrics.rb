@@ -24,14 +24,27 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
          long: '--docker-host DOCKER_HOST',
          default: "tcp://#{ENV['NODE_IP']}:2375"
 
+  def get_containers_name
+    names = []
+    `docker ps`.each_line do |ps|
+      next if ps =~ /^CONTAINER/
+      names.push(ps.split.last)
+    end
+    return names
+  end
+
   def get_mem_stats
+     step = 0
+     ENV['DOCKER_HOST'] = config[:docker_host]
+     c_names = get_containers_name
      mem_stat = []
      info = []
-     ENV['DOCKER_HOST'] = config[:docker_host]
     `docker ps --no-trunc`.each_line do |ps|
       next if ps =~ /^CONTAINER/
       container, image = ps.split /\s+/
-      prefix = "#{container}"
+      #prefix = "#{container}"
+      prefix = c_names[step]
+      step = step + 1
 
       ['memory.stat'].each do |stat|
         f = [config[:cgroup_path], "memory/system.slice/docker-"+container+".scope", stat].join('/')
@@ -52,13 +65,17 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
   end
 
   def get_mem_usage
+     step = 0
+     c_names = get_containers_name
      mem_stat = []
      info = []
      ENV['DOCKER_HOST'] = config[:docker_host]
     `docker ps --no-trunc`.each_line do |ps|
       next if ps =~ /^CONTAINER/
       container, image = ps.split /\s+/
-      prefix = "#{container}"
+      #prefix = "#{container}"
+      prefix = c_names[step]
+      step = step + 1
 
       ['memory.usage_in_bytes'].each do |stat|
         f = [config[:cgroup_path], "memory/system.slice/docker-"+container+".scope", stat].join('/')

@@ -13,12 +13,14 @@ cat > /etc/sensu/conf.d/config.json <<EOF
         "cpu-metrics",                                                                                        
         "memory-metrics",                                                                                     
         "docker-cpu-metrics",                                                                                 
-        "docker-memory-metrics"                                                                               
+        "docker-memory-metrics",
+        "cpu-check",
+        "ram-check"
      ]                                                                                                        
   },                                                                                                          
   "rabbitmq": {                                                                                               
     "ssl": false,
-    "host": "rmq",
+    "host": "$RMQ_PORT_5672_TCP_ADDR",
     "port": $RMQ_PORT_5672_TCP_PORT,
     "vhost": "/",
     "user": "rabbit",

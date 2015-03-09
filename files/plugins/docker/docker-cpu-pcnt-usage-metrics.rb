@@ -24,15 +24,28 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
          long: '--docker-host DOCKER_HOST',
          default: "tcp://#{ENV['NODE_IP']}:2375"
 
+  def get_containers_name
+    names = []
+    `docker ps`.each_line do |ps|
+      next if ps =~ /^CONTAINER/
+      names.push(ps.split.last)
+    end
+    return names
+  end
+
   def get_cpuacct_stats 
+     step = 0
+     ENV['DOCKER_HOST'] = config[:docker_host]
+     c_names = get_containers_name
      cpuacct_stat = []
      info = []
-     ENV['DOCKER_HOST'] = config[:docker_host]
     `docker ps --no-trunc`.each_line do |ps|
       next if ps =~ /^CONTAINER/
       container, image = ps.split /\s+/
-      prefix = "#{container}"
-
+      container_name = ps.split.last
+      #prefix = "#{container}"
+      prefix = c_names[step]
+      step = step + 1
       ['cpuacct.stat','cpuacct.usage'].each do |stat|
         f = [config[:cgroup_path], "cpuacct/system.slice/docker-"+container+".scope", stat].join('/')
         File.open(f, "r").each_line do |l|
@@ -56,7 +69,7 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
     sleep(1)
     cpuacct_stat2 = get_cpuacct_stats
     cpu_metrics = cpuacct_stat2.keys
-
+    
     # diff cpu usage in last second
     cpu_sample_diff = Hash[cpuacct_stat2.map { |k, v| [k, v - cpuacct_stat1[k]] }]
 
@@ -74,7 +87,7 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
             total = total + metric_val.to_f
         end
         output "#{config[:scheme]}.#{metric}", metric_val
-        if (step % 2 == 0) then 
+        if (step % 2 == 0) then
             output "#{config[:scheme]}.#{container}.#{cpuacct}.#{stat}.total", sprintf("%.03f", total)
             total = 0.0
         end 
