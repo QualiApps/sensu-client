@@ -66,10 +66,10 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
 
   def get_mem_usage
      step = 0
+     ENV['DOCKER_HOST'] = config[:docker_host]
      c_names = get_containers_name
      mem_stat = []
      info = []
-     ENV['DOCKER_HOST'] = config[:docker_host]
     `docker ps --no-trunc`.each_line do |ps|
       next if ps =~ /^CONTAINER/
       container, image = ps.split /\s+/

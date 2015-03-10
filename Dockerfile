@@ -9,8 +9,11 @@ RUN yum install -y sensu \
 	ruby \
 	initscripts \
 	supervisor \
+	python-pip \
 	&& gem install sensu-plugin \
-	docker-api
+	docker-api \
+	&& pip install sensu-plugin \
+	docker-py
 RUN cd / \
 	&& curl -O https://kojipkgs.fedoraproject.org/packages/docker-io/1.4.1/8.fc21/x86_64/docker-io-1.4.1-8.fc21.x86_64.rpm  \
 	&& rpm -Uhv docker-io-1.4.1-8.fc21.x86_64.rpm \

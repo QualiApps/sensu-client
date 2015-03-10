@@ -15,7 +15,8 @@ cat > /etc/sensu/conf.d/config.json <<EOF
         "docker-cpu-metrics",                                                                                 
         "docker-memory-metrics",
         "cpu-check",
-        "ram-check"
+        "ram-check",
+        "docker-status-metrics"
      ]                                                                                                        
   },                                                                                                          
   "rabbitmq": {                                                                                               
