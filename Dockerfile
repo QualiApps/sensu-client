@@ -28,4 +28,4 @@ RUN chmod 700 /etc/sensu/sensu-init.sh
 # supervisord
 COPY ./files/supervisord.conf /etc/supervisord.conf
 
-#ENTRYPOINT [ "/bin/bash", "/etc/sensu/sensu-init.sh" ]
+ENTRYPOINT [ "/bin/bash", "/etc/sensu/sensu-init.sh" ]
