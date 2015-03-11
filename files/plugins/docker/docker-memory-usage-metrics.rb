@@ -3,6 +3,7 @@
 require 'rubygems' if RUBY_VERSION < '1.9.0'
 require 'sensu-plugin/metric/cli'
 require 'socket'
+require 'time'
 
 class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
 
@@ -93,7 +94,6 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
   def metrics_hash                                                                                            
     mem = {}                                                                                                  
     get_mem_stats.each do |line|                                                                        
-      puts line
       mem['total']     = line.split(/\s+/)[1].to_i * 1024 if line.match(/^MemTotal/)                          
       mem['free']      = line.split(/\s+/)[1].to_i * 1024 if line.match(/^MemFree/)                           
       mem['buffers']   = line.split(/\s+/)[1].to_i * 1024 if line.match(/^Buffers/)                           
@@ -109,7 +109,8 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
     mem = get_mem_usage                                                                                      
                                                                                                               
     mem.each do |k, v|                                                                                        
-      output "#{config[:scheme]}.#{k}", v                                                                     
+      filter = k.split "."
+      print filter[0], " ", "#{config[:scheme]}.#{k}", " ", v, " ", Time.now.to_i, "\n"                                                                     
     end                                                                                                       
                                                                                                               
     ok                                                                                                        

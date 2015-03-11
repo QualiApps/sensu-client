@@ -3,6 +3,7 @@
 require 'rubygems' if RUBY_VERSION < '1.9.0'
 require 'sensu-plugin/metric/cli'
 require 'socket'
+require 'time'
 
 class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
 
@@ -86,9 +87,9 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
             metric_val = sprintf("%.03f", cpu_sample_diff[metric].to_f/(cpu_sample_diff[key].to_f/1000/1000/1000))
             total = total + metric_val.to_f
         end
-        output "#{config[:scheme]}.#{metric}", metric_val
+        print container, " ", "#{config[:scheme]}.#{metric}", " ", metric_val, " ", Time.now.to_i, "\n"
         if (step % 2 == 0) then
-            output "#{config[:scheme]}.#{container}.#{cpuacct}.#{stat}.total", sprintf("%.03f", total)
+            print container, " ", "#{config[:scheme]}.#{container}.#{cpuacct}.#{stat}.total", " ", sprintf("%.03f", total), " ", Time.now.to_i, "\n"
             total = 0.0
         end 
       end

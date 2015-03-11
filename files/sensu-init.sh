@@ -16,7 +16,8 @@ cat > /etc/sensu/conf.d/config.json <<EOF
         "docker-memory-metrics",
         "cpu-check",
         "ram-check",
-        "docker-status-metrics"
+        "docker-status-metrics",
+        "docker-processes-metrics"
      ]                                                                                                        
   },                                                                                                          
   "rabbitmq": {                                                                                               
@@ -32,4 +33,4 @@ EOF
 fi
 
 # Start Supervisord
-/usr/bin/supervisord -c /etc/supervisord.conf
+#/usr/bin/supervisord -c /etc/supervisord.conf

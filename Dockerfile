@@ -12,6 +12,7 @@ RUN yum install -y sensu \
 	python-pip \
 	&& gem install sensu-plugin \
 	docker-api \
+	sys-proctable \
 	&& pip install sensu-plugin \
 	docker-py
 RUN cd / \
@@ -27,4 +28,4 @@ RUN chmod 700 /etc/sensu/sensu-init.sh
 # supervisord
 COPY ./files/supervisord.conf /etc/supervisord.conf
 
-ENTRYPOINT [ "/bin/bash", "/etc/sensu/sensu-init.sh" ]
+#ENTRYPOINT [ "/bin/bash", "/etc/sensu/sensu-init.sh" ]

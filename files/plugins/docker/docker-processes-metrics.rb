@@ -47,7 +47,16 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
          description: 'docker host',
          short: '-H DOCKER_HOST',
          long: '--docker-host DOCKER_HOST',
-         default: 'tcp://127.0.0.1:2375'
+         default: "tcp://#{ENV['NODE_IP']}:2375"
+
+  def get_containers_name                                                                                     
+    names = []                                                                                                
+    `docker ps`.each_line do |ps|                                                                             
+      next if ps =~ /^CONTAINER/                                                                              
+      names.push(ps.split.last)                                                                               
+    end                                                                                                       
+    return names                                                                                              
+  end  
 
   def run
     container_metrics
@@ -65,16 +74,20 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
     fields = [:rss, :vsize, :nswap, :pctmem]
 
     ENV['DOCKER_HOST'] = config[:docker_host]
+    c_names = get_containers_name
+    step = 0
     containers = `docker ps --quiet --no-trunc`.split("\n")
 
     containers.each do |container|
+      cname = c_names[step]
+      step = step + 1
       pids = cgroup.join("docker-"+container+".scope").join('cgroup.procs').readlines.map(&:to_i)
 
       processes = ps.values_at(*pids).flatten.compact.group_by(&:comm)
       processes2 = ps2.values_at(*pids).flatten.compact.group_by(&:comm)
 
       processes.each do |comm, process|
-        prefix = "#{config[:scheme]}.#{container}.#{comm}"
+        prefix = cname + " " + "#{config[:scheme]}.#{container}.#{comm}"
         fields.each do |field|
           output "#{prefix}.#{field}", process.map(&field).reduce(:+), timestamp
         end
