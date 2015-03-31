@@ -18,7 +18,7 @@ class GetRunningContainers(SensuPluginMetricGraphite):
         )
 
     def run(self):
-        docker_client = Client(base_url='tcp://' + self.options.docker + ':2375', version='1.16')
+        docker_client = Client(base_url='tcp://' + self.options.docker + ':2375')
         for container in docker_client.containers(all=True):
             self.output(container['Id'] + '.run', self.check_status(container['Status']))
         self.ok()
