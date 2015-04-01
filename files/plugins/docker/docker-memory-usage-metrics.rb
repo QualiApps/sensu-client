@@ -34,6 +34,22 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
     return names
   end
 
+  def get_cgroup(container, stat_file, mount)
+    # We try with different cgroups so that it works even if only one is properly working
+    mountpoint = [config[:cgroup_path], mount].join('/')
+
+    stat_file_path_lxc = [mountpoint, "lxc"].join('/')
+    stat_file_path_docker = [mountpoint, "docker"].join('/')
+    stat_file_path_coreos = [mountpoint, "system.slice"].join('/')
+    if Dir.exists?(stat_file_path_lxc)
+      return [stat_file_path_lxc, container, stat_file].join('/')
+    elsif Dir.exists?(stat_file_path_docker)
+      return [stat_file_path_docker, container, stat_file].join('/')
+    elsif Dir.exists?(stat_file_path_coreos)
+      return [stat_file_path_coreos, "docker-"+container+".scope", stat_file].join('/')
+    end
+  end
+
   def get_mem_stats
      step = 0
      ENV['DOCKER_HOST'] = config[:docker_host]
@@ -67,7 +83,7 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
 
   def get_mem_usage
      step = 0
-     ENV['DOCKER_HOST'] = config[:docker_host]
+     #ENV['DOCKER_HOST'] = config[:docker_host]
      c_names = get_containers_name
      mem_stat = []
      info = []
@@ -77,9 +93,9 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
       #prefix = "#{container}"
       prefix = c_names[step]
       step = step + 1
-
       ['memory.usage_in_bytes'].each do |stat|
-        f = [config[:cgroup_path], "memory/system.slice/docker-"+container+".scope", stat].join('/')
+        #f = [config[:cgroup_path], "memory/system.slice/docker-"+container+".scope", stat].join('/')
+        f = get_cgroup(container, stat, "memory")
         File.open(f, "r").each_line do |value|
           key = [prefix, stat, "usage"].join('.')
           info.push(value)
@@ -89,7 +105,6 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
     end
     return Hash[mem_stat.zip(info.map(&:to_i))].reject {|key, value| value == nil }
   end
-
 
   def metrics_hash                                                                                            
     mem = {}                                                                                                  
@@ -107,12 +122,10 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
 
   def run                                                                                                     
     mem = get_mem_usage                                                                                      
-                                                                                                              
     mem.each do |k, v|                                                                                        
       filter = k.split "."
       print filter[0], " ", "#{config[:scheme]}.#{k}", " ", v, " ", Time.now.to_i, "\n"                                                                     
-    end                                                                                                       
-                                                                                                              
-    ok                                                                                                        
-  end 
-end 
+    end
+    ok
+  end
+end

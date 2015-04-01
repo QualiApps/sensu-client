@@ -20,10 +20,10 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
     :default => "/sys/fs/cgroup"
 
   option :docker_host,
-         description: 'docker host',
-         short: '-H DOCKER_HOST',
-         long: '--docker-host DOCKER_HOST',
-         default: "tcp://#{ENV['NODE_IP']}:2375"
+    :description => 'docker host',
+    :short => '-H DOCKER_HOST',
+    :long => '--docker-host DOCKER_HOST',
+    :default => "tcp://#{ENV['NODE_IP']}:2375"
 
   def get_containers_name
     names = []
@@ -34,12 +34,28 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
     return names
   end
 
-  def get_cpuacct_stats 
-     step = 0
-     ENV['DOCKER_HOST'] = config[:docker_host]
-     c_names = get_containers_name
-     cpuacct_stat = []
-     info = []
+  def get_cgroup(container, stat_file, mount)
+    # We try with different cgroups so that it works even if only one is properly working
+    mountpoint = [config[:cgroup_path], mount].join('/')
+
+    stat_file_path_lxc = [mountpoint, "lxc"].join('/')
+    stat_file_path_docker = [mountpoint, "docker"].join('/')
+    stat_file_path_coreos = [mountpoint, "system.slice"].join('/')
+    if Dir.exists?(stat_file_path_lxc)
+      return [stat_file_path_lxc, container, stat_file].join('/')
+    elsif Dir.exists?(stat_file_path_docker)
+      return [stat_file_path_docker, container, stat_file].join('/')
+    elsif Dir.exists?(stat_file_path_coreos)
+      return [stat_file_path_coreos, "docker-"+container+".scope", stat_file].join('/')
+    end
+  end
+
+  def get_cpuacct_stats
+    step = 0
+    #ENV['DOCKER_HOST'] = config[:docker_host]
+    c_names = get_containers_name
+    cpuacct_stat = []
+    info = []
     `docker ps --no-trunc`.each_line do |ps|
       next if ps =~ /^CONTAINER/
       container, image = ps.split /\s+/
@@ -48,7 +64,8 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
       prefix = c_names[step]
       step = step + 1
       ['cpuacct.stat','cpuacct.usage'].each do |stat|
-        f = [config[:cgroup_path], "cpuacct/system.slice/docker-"+container+".scope", stat].join('/')
+        #f = [config[:cgroup_path], "cpuacct/system.slice/docker-"+container+".scope", stat].join('/')
+        f = get_cgroup(container, stat, "cpuacct")
         File.open(f, "r").each_line do |l|
           k, v = l.chomp.split /\s+/
           if (v != nil) then
@@ -82,15 +99,15 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
       if (stat != "usage") then
         step = step + 1
         key = [container, cpuacct, 'usage'].join('.')
-	metric_val = 0.0
-	if (cpu_sample_diff[key].to_i != 0) then
-            metric_val = sprintf("%.03f", cpu_sample_diff[metric].to_f/(cpu_sample_diff[key].to_f/1000/1000/1000))
-            total = total + metric_val.to_f
+        metric_val = 0.0
+        if (cpu_sample_diff[key].to_i != 0) then
+          metric_val = sprintf("%.03f", cpu_sample_diff[metric].to_f/(cpu_sample_diff[key].to_f/1000/1000/1000))
+          total = total + metric_val.to_f
         end
         print container, " ", "#{config[:scheme]}.#{metric}", " ", metric_val, " ", Time.now.to_i, "\n"
         if (step % 2 == 0) then
-            print container, " ", "#{config[:scheme]}.#{container}.#{cpuacct}.#{stat}.total", " ", sprintf("%.03f", total), " ", Time.now.to_i, "\n"
-            total = 0.0
+          print container, " ", "#{config[:scheme]}.#{container}.#{cpuacct}.#{stat}.total", " ", sprintf("%.03f", total), " ", Time.now.to_i, "\n"
+          total = 0.0
         end 
       end
     end

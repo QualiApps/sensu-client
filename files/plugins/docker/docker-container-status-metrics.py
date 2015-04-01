@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
+
 import sys
 import os
 
@@ -13,12 +14,12 @@ class GetRunningContainers(SensuPluginMetricGraphite):
             '-d',
             '--docker',
             type=str,
-            default=os.environ.get("NODE_IP", "127.0.0.1"),
+            default=os.environ.get("NODE_IP", "unix://var/run/docker.sock"),
             help='Docker hostname'
         )
 
     def run(self):
-        docker_client = Client(base_url='tcp://' + self.options.docker + ':2375')
+        docker_client = Client(base_url=self.options.docker, version='1.16')
         for container in docker_client.containers(all=True):
             self.output(container['Id'] + '.run', self.check_status(container['Status']))
         self.ok()

@@ -41,7 +41,7 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
          description: 'path to cgroup mountpoint',
          short: '-c PATH',
          long: '--cgroup PATH',
-         default: '/sys/fs/cgroup/'
+         default: '/sys/fs/cgroup'
 
   option :docker_host,
          description: 'docker host',
@@ -63,6 +63,22 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
     ok
   end
 
+  def get_cgroup(container, stat_file, mount)
+    # We try with different cgroups so that it works even if only one is properly working
+    mountpoint = [config[:cgroup_path], mount].join('/')
+
+    stat_file_path_lxc = [mountpoint, "lxc"].join('/')
+    stat_file_path_docker = [mountpoint, "docker"].join('/')
+    stat_file_path_coreos = [mountpoint, "system.slice"].join('/')
+    if Dir.exists?(stat_file_path_lxc)
+      return [stat_file_path_lxc, container, stat_file].join('/')
+    elsif Dir.exists?(stat_file_path_docker)
+      return [stat_file_path_docker, container, stat_file].join('/')
+    elsif Dir.exists?(stat_file_path_coreos)
+      return [stat_file_path_coreos, "docker-"+container+".scope", stat_file].join('/')
+    end
+  end
+
   def container_metrics
     cgroup = Pathname(config[:cgroup_path]).join('cpu/system.slice')
 
@@ -73,7 +89,7 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
 
     fields = [:rss, :vsize, :nswap, :pctmem]
 
-    ENV['DOCKER_HOST'] = config[:docker_host]
+    #ENV['DOCKER_HOST'] = config[:docker_host]
     c_names = get_containers_name
     step = 0
     containers = `docker ps --quiet --no-trunc`.split("\n")
@@ -81,7 +97,9 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
     containers.each do |container|
       cname = c_names[step]
       step = step + 1
-      pids = cgroup.join("docker-"+container+".scope").join('cgroup.procs').readlines.map(&:to_i)
+      f = get_cgroup(container, "cgroup.procs", "cpu")
+      #pids = cgroup.join("docker-"+container+".scope").join('cgroup.procs').readlines.map(&:to_i)
+      pids = Pathname(f).readlines.map(&:to_i)
 
       processes = ps.values_at(*pids).flatten.compact.group_by(&:comm)
       processes2 = ps2.values_at(*pids).flatten.compact.group_by(&:comm)
@@ -99,5 +117,6 @@ class DockerContainerMetrics < Sensu::Plugin::Metric::CLI::Graphite
         output "#{prefix}.cpu", cpu, timestamp
       end
     end
+    ok
   end
 end
