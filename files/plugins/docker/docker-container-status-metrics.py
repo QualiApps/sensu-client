@@ -14,7 +14,7 @@ class GetRunningContainers(SensuPluginMetricGraphite):
             '-d',
             '--docker',
             type=str,
-            default=os.environ.get("NODE_IP", "unix://var/run/docker.sock"),
+            default=os.environ.get("NODEIP", "unix://var/run/docker.sock"),
             help='Docker hostname'
         )
 
