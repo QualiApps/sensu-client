@@ -21,11 +21,13 @@ RUN cd / \
 	&& rm docker-io-1.4.1-8.fc21.x86_64.rpm
 
 COPY ./files/plugins/ /etc/sensu/plugins/
+COPY ./files/pre_init.py /usr/local/sbin/pre_init.py
 COPY ./files/sensu-init.sh /etc/sensu/sensu-init.sh
 
-RUN chmod 700 /etc/sensu/sensu-init.sh
+RUN chmod 700 /etc/sensu/sensu-init.sh \
+    /usr/local/sbin/pre_init.py
 
 # supervisord
 COPY ./files/supervisord.conf /etc/supervisord.conf
 
-ENTRYPOINT [ "/bin/bash", "/etc/sensu/sensu-init.sh" ]
+ENTRYPOINT [ "python", "/usr/local/sbin/pre_init.py" ]
