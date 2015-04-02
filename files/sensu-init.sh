@@ -34,5 +34,8 @@ cat > /etc/sensu/conf.d/config.json <<EOF
 EOF
 fi
 
+# Set the docker.sock user as sensu
+chown sensu /var/run/docker.sock
+
 # Start Supervisord
 /usr/bin/supervisord -c /etc/supervisord.conf
