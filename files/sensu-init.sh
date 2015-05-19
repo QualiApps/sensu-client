@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 
 if [ ! -f /etc/sensu/conf.d/config.json ]; then
-	#ADDRESS=$(awk "/$HOSTNAME/ "'{ print $1 }' /etc/hosts)
 
 # Sets client config                                                                                        
 cat > /etc/sensu/conf.d/config.json <<EOF                                                                  
@@ -24,11 +23,11 @@ cat > /etc/sensu/conf.d/config.json <<EOF
   },                                                                                                          
   "rabbitmq": {                                                                                               
     "ssl": false,
-    "host": "$RMQ_PORT_5672_TCP_ADDR",
-    "port": $RMQ_PORT_5672_TCP_PORT,
-    "vhost": "/",
-    "user": "rabbit",
-    "password": "rabbit"
+    "host": "${FEED_NAME:-feed}",
+    "port": ${FEED_PORT:-5672},
+    "vhost": "${RMQ_VHOST:-/}",
+    "user": "${RMQ_USER:-rabbit}",
+    "password": "${RMQ_PASS:-rabbit}"
   }
 }
 EOF
